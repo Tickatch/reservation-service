@@ -10,7 +10,7 @@ plugins {
 
 group = 'com.tickatch'
 version = '1.0.0'
-description = 'project-interface'
+description = 'reservation-service'
 
 java {
     toolchain {

@@ -1,4 +1,4 @@
-package com.tickatch.projectinterface;
+package com.tickatch.reservationservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

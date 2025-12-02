@@ -1,4 +1,4 @@
-package com.tickatch.projectinterface;
+package com.tickatch.reservationservice;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
