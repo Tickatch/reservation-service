@@ -1,4 +1,4 @@
-package com.tickatch.reservationservice.reservation.presentation.controller;
+package com.tickatch.reservationservice.reservation.presentation.api;
 
 import com.tickatch.reservationservice.reservation.application.service.ReservationService;
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationDetailResponse;
