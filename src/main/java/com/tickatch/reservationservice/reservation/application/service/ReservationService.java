@@ -27,7 +27,7 @@ public class ReservationService {
 
   //1. 예매 생성
   @Transactional
-  public UUID reserve(ReservationRequest req) {
+  public ReservationResponse reserve(ReservationRequest req) {
 
     Reservation reservation = Reservation.builder()
         .reserverId(req.reserverId())
@@ -42,7 +42,7 @@ public class ReservationService {
 
     reservationRepository.save(reservation);
 
-    return reservation.getId().toUuid();
+    return ReservationResponse.from(reservation);
   }
 
   //2. 예매 상세 조회
