@@ -9,13 +9,11 @@ public class ReservationException extends BusinessException {
     super(errorCode);
   }
 
-  public ReservationException(ErrorCode errorCode,
-      Object... errorArgs) {
+  public ReservationException(ErrorCode errorCode, Object... errorArgs) {
     super(errorCode, errorArgs);
   }
 
-  public ReservationException(ErrorCode errorCode, Throwable cause,
-      Object... errorArgs) {
+  public ReservationException(ErrorCode errorCode, Throwable cause, Object... errorArgs) {
     super(errorCode, cause, errorArgs);
   }
 }

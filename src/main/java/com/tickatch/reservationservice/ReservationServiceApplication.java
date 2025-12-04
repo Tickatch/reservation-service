@@ -2,6 +2,7 @@ package com.tickatch.reservationservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * Spring Boot 애플리케이션의 진입점 클래스.
@@ -11,7 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author 김형섭
  * @since 1.0.0
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.tickatch.reservationservice")
+@EnableFeignClients(basePackages = "com.tickatch.reservationservice")
 public class ReservationServiceApplication {
 
   /**
