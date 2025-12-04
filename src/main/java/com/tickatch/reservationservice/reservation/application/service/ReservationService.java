@@ -5,6 +5,7 @@ import com.tickatch.reservationservice.reservation.domain.ReservationId;
 import com.tickatch.reservationservice.reservation.domain.SeatAvailableCheck;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationErrorCode;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationException;
+import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationDetailResponse;
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationRequest;
@@ -22,6 +23,7 @@ public class ReservationService {
 
   private final SeatAvailableCheck seatAvailableCheck;
   private final ReservationRepository reservationRepository;
+  private final ReservationDetailsRepository reservationDetailsRepository;
 
   //1. 예매 생성
   @Transactional
@@ -47,6 +49,7 @@ public class ReservationService {
   @Transactional(readOnly = true)
   public ReservationDetailResponse getDetailReservation(UUID reservationId) {
 
+    //예매 id로 조회
     Reservation reservation = reservationRepository.findById(ReservationId.of(reservationId))
         .orElseThrow(() -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
@@ -55,9 +58,9 @@ public class ReservationService {
 
   //3. 예매 목록 조회
   @Transactional(readOnly = true)
-  public Page<ReservationResponse> getAllReservations(Pageable pageable) {
+  public Page<ReservationResponse> getAllReservations(UUID reserverId, Pageable pageable) {
 
-    return reservationRepository.findAll(pageable)
+    return reservationDetailsRepository.findAllByReserverId(reserverId, pageable)
         .map(ReservationResponse::from);
   }
 
