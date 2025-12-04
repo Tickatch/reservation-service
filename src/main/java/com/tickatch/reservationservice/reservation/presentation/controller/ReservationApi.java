@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class ReservationController {
+public class ReservationApi {
 
   private final ReservationService reservationService;
 
