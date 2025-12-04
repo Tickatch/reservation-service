@@ -13,6 +13,7 @@ public enum ReservationErrorCode implements ErrorCode {
 
   INVALID_STATUS_FOR_PAYMENT(HttpStatus.BAD_REQUEST.value(), "INVALID_STATUS_FOR_PAYMENT"),
   ALREADY_CANCELED_OR_EXPIRED(HttpStatus.BAD_REQUEST.value(), "ALREADY_CANCELED_OR_EXPIRED"),
+  INVALID_RESERVE_SEAT(HttpStatus.BAD_REQUEST.value(), "INVALID_RESERVE_SEAT"),
   ;
 
   private final int status;
