@@ -13,8 +13,7 @@ public record ReservationDetailResponse(
     long seatId,
     String seatNumber,
     Long price,
-    ReservationStatus status
-) {
+    ReservationStatus status) {
 
   public static ReservationDetailResponse from(Reservation reservation) {
     return new ReservationDetailResponse(
@@ -26,7 +25,6 @@ public record ReservationDetailResponse(
         reservation.getProductInfo().getSeatId(),
         reservation.getProductInfo().getSeatNumber(),
         reservation.getProductInfo().getPrice(),
-        reservation.getStatus()
-    );
+        reservation.getStatus());
   }
 }

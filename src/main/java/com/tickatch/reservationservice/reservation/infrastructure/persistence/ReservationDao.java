@@ -28,18 +28,21 @@ public class ReservationDao implements ReservationDetailsRepository {
 
     QReservation reservation = QReservation.reservation;
 
-    var content = queryFactory
-        .selectFrom(reservation)
-        .where(reservation.reserver.id.eq(reserverId))
-        .offset(pageable.getOffset())
-        .limit(pageable.getPageSize())
-        .orderBy(reservation.createdAt.desc())
-        .fetch();
+    var content =
+        queryFactory
+            .selectFrom(reservation)
+            .where(reservation.reserver.id.eq(reserverId))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .orderBy(reservation.createdAt.desc())
+            .fetch();
 
-    long total = queryFactory.select(reservation.count())
-        .from(reservation)
-        .where(reservation.reserver.id.eq(reserverId))
-        .fetchOne();
+    long total =
+        queryFactory
+            .select(reservation.count())
+            .from(reservation)
+            .where(reservation.reserver.id.eq(reserverId))
+            .fetchOne();
 
     return new PageImpl<>(content, pageable, total);
   }

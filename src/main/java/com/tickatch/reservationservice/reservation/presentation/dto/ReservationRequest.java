@@ -11,7 +11,4 @@ public record ReservationRequest(
     @NotBlank String productName,
     long seatId,
     @NotBlank String seatNumber,
-    Long price
-) {
-
-}
+    Long price) {}

@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 
 public interface ReservationDetailsRepository {
 
-  //예매자 id와 상품 id로 조회
+  // 예매자 id와 상품 id로 조회
   Optional<Reservation> findByReserverIdAndProductId(UUID reserverId, Long productId);
 
-  //예매자별 예매 전체 조회
+  // 예매자별 예매 전체 조회
   Page<Reservation> findAllByReserverId(UUID reserverId, Pageable pageable);
 }

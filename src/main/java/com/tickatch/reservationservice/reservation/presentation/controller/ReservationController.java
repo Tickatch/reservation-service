@@ -23,42 +23,36 @@ public class ReservationController {
 
   private final ReservationService reservationService;
 
-  //1. 예매하기
+  // 1. 예매하기
   @PostMapping
   @Operation(summary = "새로운 예매 생성", description = "새로운 예매를 생성합니다.")
-  public ApiResponse<ReservationResponse> reserve(
-      @Valid @RequestBody ReservationRequest request) {
+  public ApiResponse<ReservationResponse> reserve(@Valid @RequestBody ReservationRequest request) {
     ReservationResponse response = reservationService.reserve(request);
     return ApiResponse.success(response);
   }
 
-  //2. 예매 상세 조회
+  // 2. 예매 상세 조회
   @GetMapping("/{id}")
   @Operation(summary = "예매 상세 조회", description = "하나의 예매의 상세 정보를 조회합니다.")
-  public ApiResponse<ReservationDetailResponse> getDetailReservation(
-      @PathVariable UUID id
-  ) {
+  public ApiResponse<ReservationDetailResponse> getDetailReservation(@PathVariable UUID id) {
     ReservationDetailResponse response = reservationService.getDetailReservation(id);
     return ApiResponse.success(response);
   }
 
-  //3. 예매 목록 조회
+  // 3. 예매 목록 조회
   @GetMapping("/{reserverId}/list")
   @Operation(summary = "예매 목록 조회", description = "사용자가 예매한 목록 전체를 조회합니다.")
   public ApiResponse<Page<ReservationResponse>> getAllReservations(
-      @PathVariable UUID reserverId, Pageable pageable
-  ) {
-    Page<ReservationResponse> response = reservationService.getAllReservations(reserverId,
-        pageable);
+      @PathVariable UUID reserverId, Pageable pageable) {
+    Page<ReservationResponse> response =
+        reservationService.getAllReservations(reserverId, pageable);
     return ApiResponse.success(response);
   }
 
-  //4. 예매 취소
+  // 4. 예매 취소
   @PostMapping("/{id}/cancel")
   @Operation(summary = "예매 취소", description = "예매를 취소합니다.")
-  public ApiResponse<Void> cancel(
-      @PathVariable UUID id
-  ) {
+  public ApiResponse<Void> cancel(@PathVariable UUID id) {
     reservationService.cancel(id);
     return ApiResponse.success();
   }

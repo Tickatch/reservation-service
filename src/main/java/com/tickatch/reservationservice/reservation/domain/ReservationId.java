@@ -17,7 +17,7 @@ public class ReservationId {
   private ReservationId(UUID id) {
     this.id = id;
   }
-  
+
   public static ReservationId of() {
     return of(null);
   }
