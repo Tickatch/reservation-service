@@ -12,7 +12,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  * @author 김형섭
  * @since 1.0.0
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.tickatch.reservationservice")
 @EnableFeignClients(basePackages = "com.tickatch.reservationservice")
 public class ReservationServiceApplication {
 
