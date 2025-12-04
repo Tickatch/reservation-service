@@ -69,7 +69,14 @@ dependencies {
     // PostgreSQL
     implementation 'org.postgresql:postgresql'
 
-    implementation 'io.github.tickatch:common-lib:0.0.1'
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+
+    implementation 'io.github.tickatch:common-lib:0.0.3'
 
     // lombok
     compileOnly 'org.projectlombok:lombok'
@@ -116,4 +123,19 @@ spotless {
 
 tasks.check {
     dependsOn 'spotlessCheck'
+}
+
+
+def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
+
+sourceSets {
+    main.java.srcDirs += [querydslDir]
+}
+
+tasks.withType(JavaCompile) {
+    options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
+}
+
+clean.doLast {
+    file(querydslDir).deleteDir()
 }
