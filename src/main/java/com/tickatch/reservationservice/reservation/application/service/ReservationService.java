@@ -127,11 +127,17 @@ public class ReservationService {
       return;
     }
 
+    int cancelledCount = 0;
     for (Reservation r : reservations) {
-      r.cancel();
+      try {
+        r.cancel();
+        cancelledCount++;
+      } catch (Exception e) {
+        log.warn("예약 취소 실패. reservationId={}, reason={}", r.getId(), e.getMessage());
+      }
     }
 
-    log.info("총 {}건의 예약 취소 완료. productId={}", reservations.size(), productId);
+    log.info("총 {}건의 예약 취소 완료. productId={}", cancelledCount, productId);
   }
 
   // 6. 예매 확정 여부
