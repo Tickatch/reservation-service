@@ -58,4 +58,12 @@ public class ReservationApi {
     reservationService.cancel(id);
     return ApiResponse.success();
   }
+
+  // 5. 예매 확정 상태 조회
+  @GetMapping("/{id}/confirmed")
+  @Operation(summary = "예매 확정 상태 조회", description = "티켓 생성 전 예매 확정 상태인지 조회합니다")
+  public ApiResponse<Boolean> isConfirmed(@PathVariable UUID id) {
+    boolean confirmed = reservationService.isConfirmed(id);
+    return ApiResponse.success(confirmed);
+  }
 }

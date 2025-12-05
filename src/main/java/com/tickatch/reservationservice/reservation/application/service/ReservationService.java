@@ -10,8 +10,10 @@ import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptSer
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationDetailResponse;
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationRequest;
 import com.tickatch.reservationservice.reservation.presentation.dto.ReservationResponse;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationService {
 
   private final ReservationRepository reservationRepository;
@@ -111,5 +114,34 @@ public class ReservationService {
 
     // 좌석 선점 취소
     seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+  }
+
+  // 5. 상품 취소 이벤트 처리
+  @Transactional
+  public void cancelByProductId(Long productId) {
+    List<Reservation> reservations = reservationRepository.findAllByProductId(productId);
+
+    if (reservations.isEmpty()) {
+      log.info("예약 없음. productId={}", productId);
+      return;
+    }
+
+    for (Reservation r : reservations) {
+      r.cancel();
+    }
+
+    log.info("총 {}건의 예약 취소 완료. productId={}", reservations.size(), productId);
+  }
+
+  //6. 예매 확정 여부
+  public boolean isConfirmed(UUID reservationId) {
+
+    Reservation reservation =
+        reservationRepository
+            .findById(ReservationId.of(reservationId))
+            .orElseThrow(
+                () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+    return reservation.isConfirmed();
   }
 }
