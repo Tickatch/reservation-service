@@ -1,6 +1,7 @@
 package com.tickatch.reservationservice.reservation.domain;
 
 import jakarta.persistence.Embeddable;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -17,11 +18,12 @@ public class ReservationId {
     this.id = id;
   }
 
-  public static ReservationId generateId() {
-    return new ReservationId(UUID.randomUUID());
+  public static ReservationId of() {
+    return of(null);
   }
 
   public static ReservationId of(UUID id) {
+    id = Objects.requireNonNullElse(id, UUID.randomUUID());
     return new ReservationId(id);
   }
 
