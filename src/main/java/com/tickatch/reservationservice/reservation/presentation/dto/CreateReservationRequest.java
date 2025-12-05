@@ -12,8 +12,7 @@ public record CreateReservationRequest(
     @NotBlank String productName,
     long seatId,
     @NotBlank String seatNumber,
-    Long price
-) {
+    Long price) {
 
   public ReservationRequest toReservationRequest() {
     return new ReservationRequest(
@@ -23,7 +22,6 @@ public record CreateReservationRequest(
         this.productName,
         this.seatId,
         this.seatNumber,
-        this.price
-    );
+        this.price);
   }
 }

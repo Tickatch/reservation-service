@@ -119,7 +119,8 @@ public class ReservationService {
   // 5. 상품 취소 이벤트 처리
   @Transactional
   public void cancelByProductId(Long productId) {
-    List<Reservation> reservations = reservationRepository.findAllByProductId(productId);
+    List<Reservation> reservations =
+        reservationRepository.findAllByProductInfo_ProductId(productId);
 
     if (reservations.isEmpty()) {
       log.info("예약 없음. productId={}", productId);
@@ -133,7 +134,7 @@ public class ReservationService {
     log.info("총 {}건의 예약 취소 완료. productId={}", reservations.size(), productId);
   }
 
-  //6. 예매 확정 여부
+  // 6. 예매 확정 여부
   public boolean isConfirmed(UUID reservationId) {
 
     Reservation reservation =

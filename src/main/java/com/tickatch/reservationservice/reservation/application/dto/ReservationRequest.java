@@ -9,6 +9,4 @@ public record ReservationRequest(
     String productName,
     long seatId,
     String seatNumber,
-    Long price) {
-
-}
+    Long price) {}

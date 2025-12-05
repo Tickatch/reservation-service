@@ -27,16 +27,13 @@ import org.springframework.util.StringUtils;
 public class Reservation extends AbstractAuditEntity {
 
   // 예매 id
-  @EmbeddedId
-  private ReservationId id;
+  @EmbeddedId private ReservationId id;
 
   // 예매자
-  @Embedded
-  private Reserver reserver;
+  @Embedded private Reserver reserver;
 
   // 상품 정보
-  @Embedded
-  private ProductInfo productInfo;
+  @Embedded private ProductInfo productInfo;
 
   // 예매 상태
   @Enumerated(EnumType.STRING)
