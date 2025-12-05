@@ -1,9 +1,9 @@
 package com.tickatch.reservationservice.reservation.presentation.api;
 
+import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
+import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
 import com.tickatch.reservationservice.reservation.application.service.ReservationService;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationDetailResponse;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationRequest;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationResponse;
+import com.tickatch.reservationservice.reservation.presentation.dto.CreateReservationRequest;
 import io.github.tickatch.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -28,8 +28,9 @@ public class ReservationApi {
   // 1. 예매하기
   @PostMapping
   @Operation(summary = "새로운 예매 생성", description = "새로운 예매를 생성합니다.")
-  public ApiResponse<ReservationResponse> reserve(@Valid @RequestBody ReservationRequest request) {
-    ReservationResponse response = reservationService.reserve(request);
+  public ApiResponse<ReservationResponse> reserve(
+      @Valid @RequestBody CreateReservationRequest request) {
+    ReservationResponse response = reservationService.reserve(request.toReservationRequest());
     return ApiResponse.success(response);
   }
 

@@ -1,4 +1,4 @@
-package com.tickatch.reservationservice.reservation.presentation.dto;
+package com.tickatch.reservationservice.reservation.application.dto;
 
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationStatus;

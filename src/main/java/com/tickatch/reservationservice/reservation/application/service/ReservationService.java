@@ -1,5 +1,8 @@
 package com.tickatch.reservationservice.reservation.application.service;
 
+import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
+import com.tickatch.reservationservice.reservation.application.dto.ReservationRequest;
+import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationErrorCode;
@@ -7,9 +10,6 @@ import com.tickatch.reservationservice.reservation.domain.exception.ReservationE
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationDetailResponse;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationRequest;
-import com.tickatch.reservationservice.reservation.presentation.dto.ReservationResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
