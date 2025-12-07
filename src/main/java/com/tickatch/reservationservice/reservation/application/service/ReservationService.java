@@ -55,7 +55,6 @@ public class ReservationService {
               .seatNumber(req.seatNumber())
               .build();
 
-      reservationRepository.save(reservation);
     } catch (Exception e) {
       // 좌석 선점 취소
       seatPreemptService.cancel(seatId);
@@ -72,6 +71,10 @@ public class ReservationService {
 
       throw new ReservationException(ReservationErrorCode.SEAT_RESERVE_FAILED);
     }
+
+    // 4) 예매 확정으로 상태 변경
+    reservation.confirm();
+    reservationRepository.save(reservation);
 
     return ReservationResponse.from(reservation);
   }
