@@ -140,12 +140,8 @@ public class ReservationService {
 
     int cancelledCount = 0;
     for (Reservation r : reservations) {
-      try {
-        r.cancel();
-        cancelledCount++;
-      } catch (Exception e) {
-        log.warn("예매 취소 실패. reservationId={}, reason={}", r.getId(), e.getMessage());
-      }
+      r.cancel();
+      cancelledCount++;
     }
 
     log.info("총 {}건의 예매 취소 완료. productId={}", cancelledCount, productId);
@@ -173,10 +169,15 @@ public class ReservationService {
 
     // 만료 상태로 변경 및 선점 취소
     for (Reservation reservation : targets) {
-      reservation.expire();
+      reservation.expire(now);
 
       // 좌석 선점 취소
-      seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+      try {
+        seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+      } catch (Exception e) {
+        log.warn("좌석 선점 취소 실패 seatId={}", reservation.getProductInfo().getSeatId(), e);
+      }
     }
+    log.info("예매 기한 만료 시 좌석 선점 취소 성공");
   }
 }
