@@ -12,7 +12,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Reserv
   List<Reservation> findAllByProductInfo_ProductId(Long productId);
 
   // 만료 대상 예매 조회
-  @Query("""
+  @Query(
+      """
           select r from Reservation r
           where r.status in ('INIT', 'PENDING_PAYMENT')
           and r.expireAt <= :now

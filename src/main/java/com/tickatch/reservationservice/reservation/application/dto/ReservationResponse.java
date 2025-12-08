@@ -5,7 +5,12 @@ import com.tickatch.reservationservice.reservation.domain.ReservationStatus;
 import java.util.UUID;
 
 public record ReservationResponse(
-    UUID id, UUID reserverId, long productId, long seatId, Long price, ReservationStatus status,
+    UUID id,
+    UUID reserverId,
+    long productId,
+    long seatId,
+    Long price,
+    ReservationStatus status,
     String reservationNumber) {
 
   public static ReservationResponse from(Reservation reservation) {

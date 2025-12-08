@@ -47,15 +47,15 @@ public class ReservationService {
     // 2) 예매 엔티티 생성
     Reservation reservation;
     try {
-      reservation = Reservation.create(
-          req.reserverId(),
-          req.reserverName(),
-          req.productId(),
-          req.productName(),
-          req.seatId(),
-          req.seatNumber(),
-          req.price()
-      );
+      reservation =
+          Reservation.create(
+              req.reserverId(),
+              req.reserverName(),
+              req.productId(),
+              req.productName(),
+              req.seatId(),
+              req.seatNumber(),
+              req.price());
 
     } catch (Exception e) {
       // 좌석 선점 취소
