@@ -2,6 +2,7 @@ package com.tickatch.reservationservice.reservation.application.dto;
 
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationStatus;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ReservationDetailResponse(
@@ -13,7 +14,10 @@ public record ReservationDetailResponse(
     long seatId,
     String seatNumber,
     Long price,
-    ReservationStatus status) {
+    ReservationStatus status,
+    String reservationNumber,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt) {
 
   public static ReservationDetailResponse from(Reservation reservation) {
     return new ReservationDetailResponse(
@@ -25,6 +29,9 @@ public record ReservationDetailResponse(
         reservation.getProductInfo().getSeatId(),
         reservation.getProductInfo().getSeatNumber(),
         reservation.getProductInfo().getPrice(),
-        reservation.getStatus());
+        reservation.getStatus(),
+        reservation.getReservationNumber(),
+        reservation.getCreatedAt(),
+        reservation.getUpdatedAt());
   }
 }
