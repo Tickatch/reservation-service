@@ -10,6 +10,7 @@ import com.tickatch.reservationservice.reservation.domain.exception.ReservationE
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
+import com.tickatch.reservationservice.reservation.domain.service.TicketService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class ReservationService {
   private final ReservationRepository reservationRepository;
   private final ReservationDetailsRepository reservationDetailsRepository;
   private final SeatPreemptService seatPreemptService;
+  private final TicketService ticketService;
 
   // 1. 예매 생성
   @Transactional
@@ -117,16 +119,22 @@ public class ReservationService {
 
     // 좌석 선점 취소
     seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+
+    // 예매 id에 해당하는 티켓 취소
+    ticketService.cancel(reservationId);
   }
 
   // 5. 상품 취소 이벤트 처리
   @Transactional
   public void cancelByProductId(Long productId) {
+
+    // 상품에 해당하는 예매 목록 조회
     List<Reservation> reservations =
         reservationRepository.findAllByProductInfo_ProductId(productId);
 
+    // 해당 예매가 없는 경우
     if (reservations.isEmpty()) {
-      log.info("예약 없음. productId={}", productId);
+      log.info("예매 없음. productId={}", productId);
       return;
     }
 
@@ -136,11 +144,11 @@ public class ReservationService {
         r.cancel();
         cancelledCount++;
       } catch (Exception e) {
-        log.warn("예약 취소 실패. reservationId={}, reason={}", r.getId(), e.getMessage());
+        log.warn("예매 취소 실패. reservationId={}, reason={}", r.getId(), e.getMessage());
       }
     }
 
-    log.info("총 {}건의 예약 취소 완료. productId={}", cancelledCount, productId);
+    log.info("총 {}건의 예매 취소 완료. productId={}", cancelledCount, productId);
   }
 
   // 6. 예매 확정 여부
