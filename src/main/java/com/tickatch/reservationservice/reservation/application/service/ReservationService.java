@@ -11,6 +11,7 @@ import com.tickatch.reservationservice.reservation.domain.repository.Reservation
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
 import com.tickatch.reservationservice.reservation.domain.service.TicketService;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -160,5 +161,22 @@ public class ReservationService {
                 () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
     return reservation.isConfirmed();
+  }
+
+  // 7. 예매 기한 만료 처리
+  @Transactional
+  public void expireReservations() {
+    LocalDateTime now = LocalDateTime.now();
+
+    // 현재를 기준으로 만료 예매 조회
+    List<Reservation> targets = reservationRepository.findAllExpiredTargets(now);
+
+    // 만료 상태로 변경 및 선점 취소
+    for (Reservation reservation : targets) {
+      reservation.expire();
+
+      // 좌석 선점 취소
+      seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+    }
   }
 }

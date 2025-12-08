@@ -47,6 +47,10 @@ public class Reservation extends AbstractAuditEntity {
   @Column(nullable = false, unique = true)
   private String reservationNumber;
 
+  // 만료 시각
+  @Column
+  private LocalDateTime expireAt;
+
   // =======================================
 
   // 생성
@@ -78,6 +82,7 @@ public class Reservation extends AbstractAuditEntity {
     this.reservationNumber =
         StringUtils.hasText(reservationNumber) ? reservationNumber : generateReservationNumber();
     this.status = ReservationStatus.INIT;
+    this.expireAt = getCreatedAt().plusMinutes(10);
   }
 
   // 팩토리 메서드
@@ -152,11 +157,10 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.CONFIRMED;
   }
 
-  // 6. 결제 시간 만료
+  // 6. 예매 시간 만료
   public void expire() {
-    validatePaymentPending();
+    validateExpired();
     this.status = ReservationStatus.EXPIRED;
-    // 좌석 원복 처리 필요
   }
 
   // 7. 현재 confirm 상태인지
@@ -179,6 +183,19 @@ public class Reservation extends AbstractAuditEntity {
   private void validateCanceledOrExpired() {
     if (this.status == ReservationStatus.CANCELED || this.status == ReservationStatus.EXPIRED) {
       throw new ReservationException(ReservationErrorCode.ALREADY_CANCELED_OR_EXPIRED);
+    }
+  }
+
+  // 3. 만료 가능한 상태인지 확인
+  private void validateExpired() {
+    if (this.status == ReservationStatus.CONFIRMED
+        || this.status == ReservationStatus.CANCELED
+        || this.status == ReservationStatus.EXPIRED) {
+      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_EXPIRE);
+    }
+
+    if (LocalDateTime.now().isBefore(this.expireAt)) {
+      throw new ReservationException(ReservationErrorCode.EXPIRE_TIME_NOT_REACHED);
     }
   }
 }
