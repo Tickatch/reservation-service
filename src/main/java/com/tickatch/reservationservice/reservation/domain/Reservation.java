@@ -52,7 +52,7 @@ public class Reservation extends AbstractAuditEntity {
   // 생성
 
   // 1. 예매 생성
-  @Builder
+  @Builder(access = AccessLevel.PRIVATE)
   public Reservation(
       UUID reservationId,
       UUID reserverId,
@@ -78,6 +78,27 @@ public class Reservation extends AbstractAuditEntity {
     this.reservationNumber =
         StringUtils.hasText(reservationNumber) ? reservationNumber : generateReservationNumber();
     this.status = ReservationStatus.INIT;
+  }
+
+  // 팩토리 메서드
+  public static Reservation create(
+      UUID reserverId,
+      String reserverName,
+      long productId,
+      String productName,
+      long seatId,
+      String seatNumber,
+      Long price
+  ) {
+    return Reservation.builder()
+        .reserverId(reserverId)
+        .reserverName(reserverName)
+        .productId(productId)
+        .productName(productName)
+        .seatId(seatId)
+        .seatNumber(seatNumber)
+        .price(price)
+        .build();
   }
 
   // 2. 예매번호(날짜와 랜덤 문자열 조합) 10자 생성
