@@ -9,13 +9,11 @@ public class TicketApiException extends BusinessException {
     super(errorCode);
   }
 
-  public TicketApiException(ErrorCode errorCode,
-      Object... errorArgs) {
+  public TicketApiException(ErrorCode errorCode, Object... errorArgs) {
     super(errorCode, errorArgs);
   }
 
-  public TicketApiException(ErrorCode errorCode, Throwable cause,
-      Object... errorArgs) {
+  public TicketApiException(ErrorCode errorCode, Throwable cause, Object... errorArgs) {
     super(errorCode, cause, errorArgs);
   }
 }

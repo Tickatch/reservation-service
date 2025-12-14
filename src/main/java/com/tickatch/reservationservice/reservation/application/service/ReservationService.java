@@ -11,6 +11,7 @@ import com.tickatch.reservationservice.reservation.domain.repository.Reservation
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
 import com.tickatch.reservationservice.reservation.domain.service.TicketService;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -47,15 +48,14 @@ public class ReservationService {
     Reservation reservation;
     try {
       reservation =
-          Reservation.builder()
-              .reserverId(req.reserverId())
-              .reserverName(req.reserverName())
-              .productId(req.productId())
-              .productName(req.productName())
-              .price(req.price())
-              .seatId(req.seatId())
-              .seatNumber(req.seatNumber())
-              .build();
+          Reservation.create(
+              req.reserverId(),
+              req.reserverName(),
+              req.productId(),
+              req.productName(),
+              req.seatId(),
+              req.seatNumber(),
+              req.price());
 
     } catch (Exception e) {
       // 좌석 선점 취소
@@ -140,12 +140,8 @@ public class ReservationService {
 
     int cancelledCount = 0;
     for (Reservation r : reservations) {
-      try {
-        r.cancel();
-        cancelledCount++;
-      } catch (Exception e) {
-        log.warn("예매 취소 실패. reservationId={}, reason={}", r.getId(), e.getMessage());
-      }
+      r.cancel();
+      cancelledCount++;
     }
 
     log.info("총 {}건의 예매 취소 완료. productId={}", cancelledCount, productId);
@@ -161,5 +157,27 @@ public class ReservationService {
                 () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
     return reservation.isConfirmed();
+  }
+
+  // 7. 예매 기한 만료 처리
+  @Transactional
+  public void expireReservations() {
+    LocalDateTime now = LocalDateTime.now();
+
+    // 현재를 기준으로 만료 예매 조회
+    List<Reservation> targets = reservationRepository.findAllExpiredTargets(now);
+
+    // 만료 상태로 변경 및 선점 취소
+    for (Reservation reservation : targets) {
+      reservation.expire(now);
+
+      // 좌석 선점 취소
+      try {
+        seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+      } catch (Exception e) {
+        log.warn("좌석 선점 취소 실패 seatId={}", reservation.getProductInfo().getSeatId(), e);
+      }
+    }
+    log.info("예매 기한 만료 시 좌석 선점 취소 성공");
   }
 }
