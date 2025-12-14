@@ -14,9 +14,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Reserv
   // 만료 대상 예매 조회
   @Query(
       """
-          select r from Reservation r
-          where r.status in ('INIT', 'PENDING_PAYMENT')
-          and r.expireAt <= :now
-      """)
+              select r from Reservation r
+              where r.status = 'INIT'
+              and r.expireAt <= :now
+          """)
   List<Reservation> findAllExpiredTargets(LocalDateTime now);
 }

@@ -122,26 +122,11 @@ public class Reservation extends AbstractAuditEntity {
 
   // 상태 관련
 
-  // 1. 결제 진행중
-  // 최초 생성 상태일 때만 결제 진행중 상태로 넘어갈 수 있다.
-  public void startPayment() {
-    validateStartPayment();
-    this.status = ReservationStatus.PENDING_PAYMENT;
-  }
-
-  // 2. 결제 성공
-  // 결제 진행 상태 이후에만 결제 성공으로 넘어갈 수 있다.
-  public void confirmSeats() {
-    validatePaymentPending();
-    this.status = ReservationStatus.CONFIRMED;
-  }
-
   // 3. 결제 실패
-  // 결제 진행 상태 이후에만 결제 실패로 넘어갈 수 있다.
+  // 생성 이후에만 결제 실패로 넘어갈 수 있다.
   public void paymentFailed() {
-    validatePaymentPending();
+    validateStartPayment();
     this.status = ReservationStatus.PAYMENT_FAILED;
-    // 좌석 원복 처리 필요
   }
 
   // 4. 사용자 예매 취소
@@ -152,10 +137,10 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.CANCELED;
   }
 
-  // 5. 예매 확정 상태로 변경
-  // 결제 진행 상태 이후에만 예매 확정으로 넘어갈 수 있다.
-  public void confirm() {
-    validatePaymentPending();
+  // 5. 결제 성공으로 예매 확정 상태로 변경
+  // 생성 이후에만 예매 확정으로 넘어갈 수 있다.
+  public void paymentConfirm() {
+    validateStartPayment();
     this.status = ReservationStatus.CONFIRMED;
   }
 
@@ -180,17 +165,11 @@ public class Reservation extends AbstractAuditEntity {
 
   // 검증
 
-  // 1. 결제 진행이 가능한 상태인지 확인
+  // 1. 결제 성공/실패로 변경 가능한 상태인지 확인
   private void validateStartPayment() {
     if (this.status != ReservationStatus.INIT) {
-      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_PAYMENT_START);
-    }
-  }
-
-  // 2. 결제 진행 상태인지 확인
-  private void validatePaymentPending() {
-    if (this.status != ReservationStatus.PENDING_PAYMENT) {
-      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_PAYMENT);
+      throw new ReservationException(
+          ReservationErrorCode.INVALID_STATUS_FOR_CONFIRMED_OR_PAYMENT_FAIL);
     }
   }
 

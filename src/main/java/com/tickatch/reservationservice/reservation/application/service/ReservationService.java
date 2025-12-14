@@ -63,20 +63,20 @@ public class ReservationService {
       throw new ReservationException(ReservationErrorCode.RESERVATION_SAVE_FAILED);
     }
 
-    // 3) 예매 확정
-    try {
-      seatPreemptService.reserve(seatId);
-    } catch (Exception e) {
-      // 예매 삭제 및 선점 취소
-      reservationRepository.delete(reservation);
-      seatPreemptService.cancel(seatId);
-
-      throw new ReservationException(ReservationErrorCode.SEAT_RESERVE_FAILED);
-    }
-
-    // 4) 예매 확정으로 상태 변경
-    reservation.confirm();
-    reservationRepository.save(reservation);
+    //    // 3) 예매 확정
+    //    try {
+    //      seatPreemptService.reserve(seatId);
+    //    } catch (Exception e) {
+    //      // 예매 삭제 및 선점 취소
+    //      reservationRepository.delete(reservation);
+    //      seatPreemptService.cancel(seatId);
+    //
+    //      throw new ReservationException(ReservationErrorCode.SEAT_RESERVE_FAILED);
+    //    }
+    //
+    //    // 4) 예매 확정으로 상태 변경
+    //    reservation.paymentConfirm();
+    //    reservationRepository.save(reservation);
 
     return ReservationResponse.from(reservation);
   }
@@ -179,5 +179,32 @@ public class ReservationService {
       }
     }
     log.info("예매 기한 만료 시 좌석 선점 취소 성공");
+  }
+
+  // 8. 결제 상태에 따라 예매 확정/취소 처리
+  @Transactional
+  public void applyPaymentResult(String status, List<String> reservationIds) {
+
+    // 결제 상태가 success인지 확인
+    boolean isSuccess = "SUCCESS".equalsIgnoreCase(status);
+
+    // 예매 id로 찾아서 예매 상태 변경
+    for (String id : reservationIds) {
+      Reservation reservation =
+          reservationRepository
+              .findById(ReservationId.of(UUID.fromString(id)))
+              .orElseThrow(
+                  () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+      if (isSuccess) {
+        // 예매 확정 상태로 변경 후 좌석 예매
+        reservation.paymentConfirm();
+        seatPreemptService.reserve(reservation.getProductInfo().getSeatId());
+      } else {
+        // 예매 실패 상태로 변경 후 선점 좌석 취소
+        reservation.paymentFailed();
+        seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+      }
+    }
   }
 }
