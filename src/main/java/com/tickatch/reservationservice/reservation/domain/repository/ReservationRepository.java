@@ -14,7 +14,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Reserv
               select r from Reservation r
               where r.productInfo.productId = :productId
               and r.status not in ('CANCELED', 'EXPIRED')
-              and r.expireAt > :now
           """)
   List<Reservation> findAllByProductInfo_ProductId(Long productId, LocalDateTime now);
 
