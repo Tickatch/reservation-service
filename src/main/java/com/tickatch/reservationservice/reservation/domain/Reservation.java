@@ -27,13 +27,16 @@ import org.springframework.util.StringUtils;
 public class Reservation extends AbstractAuditEntity {
 
   // 예매 id
-  @EmbeddedId private ReservationId id;
+  @EmbeddedId
+  private ReservationId id;
 
   // 예매자
-  @Embedded private Reserver reserver;
+  @Embedded
+  private Reserver reserver;
 
   // 상품 정보
-  @Embedded private ProductInfo productInfo;
+  @Embedded
+  private ProductInfo productInfo;
 
   // 예매 상태
   @Enumerated(EnumType.STRING)
@@ -45,7 +48,8 @@ public class Reservation extends AbstractAuditEntity {
   private String reservationNumber;
 
   // 만료 시각
-  @Column private LocalDateTime expireAt;
+  @Column
+  private LocalDateTime expireAt;
 
   // =======================================
 
@@ -78,7 +82,7 @@ public class Reservation extends AbstractAuditEntity {
     this.reservationNumber =
         StringUtils.hasText(reservationNumber) ? reservationNumber : generateReservationNumber();
     this.status = ReservationStatus.INIT;
-    this.expireAt = getCreatedAt().plusMinutes(10);
+    this.expireAt = LocalDateTime.now().plusMinutes(10);
   }
 
   // 팩토리 메서드
@@ -122,14 +126,21 @@ public class Reservation extends AbstractAuditEntity {
 
   // 상태 관련
 
-  // 3. 결제 실패
-  // 생성 이후에만 결제 실패로 넘어갈 수 있다.
-  public void paymentFailed() {
+  // 1. 결제 진행중
+  // 최초 생성 상태일 때만 결제 진행중 상태로 넘어갈 수 있다.
+  public void startPayment() {
     validateStartPayment();
+    this.status = ReservationStatus.PENDING_PAYMENT;
+  }
+
+  // 2. 결제 실패
+  // 결제 진행 상태 이후에만 결제 실패로 넘어갈 수 있다.
+  public void paymentFailed() {
+    validatePaymentPending();
     this.status = ReservationStatus.PAYMENT_FAILED;
   }
 
-  // 4. 사용자 예매 취소
+  // 3. 사용자 예매 취소
   // 취소 또는 만료 상태가 아닐 때만 취소할 수 있다.
   // 예매 확정 시에는? -> 환불 생각
   public void cancel() {
@@ -137,14 +148,14 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.CANCELED;
   }
 
-  // 5. 결제 성공으로 예매 확정 상태로 변경
-  // 생성 이후에만 예매 확정으로 넘어갈 수 있다.
+  // 4. 결제 성공으로 예매 확정 상태로 변경
+  // 결제 진행 상태 이후에만 예매 확정으로 넘어갈 수 있다.
   public void paymentConfirm() {
-    validateStartPayment();
+    validatePaymentPending();
     this.status = ReservationStatus.CONFIRMED;
   }
 
-  // 6. 예매 시간 만료
+  // 5. 예매 시간 만료
   // 예매 확정, 취소, 만료 상태가 아닌 경우에만 만료로 넘어갈 수 있다.
   public void expire(LocalDateTime now) {
     validateCanExpired();
@@ -156,7 +167,7 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.EXPIRED;
   }
 
-  // 7. 현재 confirm 상태인지
+  // 6. 현재 confirm 상태인지
   public boolean isConfirmed() {
     return this.status == ReservationStatus.CONFIRMED;
   }
@@ -165,11 +176,17 @@ public class Reservation extends AbstractAuditEntity {
 
   // 검증
 
-  // 1. 결제 성공/실패로 변경 가능한 상태인지 확인
+  // 1. 결제 진행이 가능한 상태인지 확인
   private void validateStartPayment() {
     if (this.status != ReservationStatus.INIT) {
-      throw new ReservationException(
-          ReservationErrorCode.INVALID_STATUS_FOR_CONFIRMED_OR_PAYMENT_FAIL);
+      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_PAYMENT_START);
+    }
+  }
+
+  // 2. 결제 진행 상태인지 확인
+  private void validatePaymentPending() {
+    if (this.status != ReservationStatus.PENDING_PAYMENT) {
+      throw new ReservationException(ReservationErrorCode.STATUS_IS_NOT_PAYMENT_PENDING);
     }
   }
 

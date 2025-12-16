@@ -63,20 +63,9 @@ public class ReservationService {
       throw new ReservationException(ReservationErrorCode.RESERVATION_SAVE_FAILED);
     }
 
-    //    // 3) 예매 확정
-    //    try {
-    //      seatPreemptService.reserve(seatId);
-    //    } catch (Exception e) {
-    //      // 예매 삭제 및 선점 취소
-    //      reservationRepository.delete(reservation);
-    //      seatPreemptService.cancel(seatId);
-    //
-    //      throw new ReservationException(ReservationErrorCode.SEAT_RESERVE_FAILED);
-    //    }
-    //
-    //    // 4) 예매 확정으로 상태 변경
-    //    reservation.paymentConfirm();
-    //    reservationRepository.save(reservation);
+    // 결제 시작으로 상태 변경
+    reservation.startPayment();
+    reservationRepository.save(reservation);
 
     return ReservationResponse.from(reservation);
   }
@@ -130,7 +119,7 @@ public class ReservationService {
 
     // 상품에 해당하는 예매 목록 조회
     List<Reservation> reservations =
-        reservationRepository.findAllByProductInfo_ProductId(productId);
+        reservationRepository.findAllByProductInfo_ProductId(productId, LocalDateTime.now());
 
     // 해당 예매가 없는 경우
     if (reservations.isEmpty()) {
@@ -139,10 +128,16 @@ public class ReservationService {
     }
 
     int cancelledCount = 0;
-    for (Reservation r : reservations) {
-      r.cancel();
-      cancelledCount++;
-    }
+
+    reservations.forEach(
+        r -> {
+
+          // 예매 취소
+          r.cancel();
+
+          // 티켓 취소
+          ticketService.cancel(r.getId().toUuid());
+        });
 
     log.info("총 {}건의 예매 취소 완료. productId={}", cancelledCount, productId);
   }
