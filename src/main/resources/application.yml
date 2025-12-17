@@ -6,6 +6,18 @@
 # ========================================
 
 spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: public
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
   # ===== 서비스 식별 정보 =====
   application:
     name: ${APP_NAME:project-interface}  # 서비스명 (Eureka 등록, 로깅, 메트릭에 사용)
@@ -48,6 +60,27 @@ spring:
         max-attempts: 3             # 최대 재시도 횟수
         max-interval: 2000          # 최대 재시도 간격 (2초)
         multiplier: 1.1             # 재시도 간격 증가율
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          max-interval: 10000
+          multiplier: 2.0
+
+  messaging:
+    exchange:
+      product: tickatch.product
 
 # ========================================
 # Eureka Client 설정
