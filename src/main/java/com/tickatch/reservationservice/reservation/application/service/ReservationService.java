@@ -9,6 +9,7 @@ import com.tickatch.reservationservice.reservation.domain.exception.ReservationE
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationException;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
+import com.tickatch.reservationservice.reservation.domain.service.PaymentService;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
 import com.tickatch.reservationservice.reservation.domain.service.TicketService;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class ReservationService {
   private final ReservationDetailsRepository reservationDetailsRepository;
   private final SeatPreemptService seatPreemptService;
   private final TicketService ticketService;
+  private final PaymentService paymentService;
 
   // 1. 예매 생성
   @Transactional
@@ -164,6 +166,8 @@ public class ReservationService {
 
     // 만료 상태로 변경 및 선점 취소
     for (Reservation reservation : targets) {
+
+      // 기한 만료로 상태 변경
       reservation.expire(now);
 
       // 좌석 선점 취소
@@ -201,5 +205,51 @@ public class ReservationService {
         seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
       }
     }
+  }
+
+  // 9. 예매 리스트 취소
+  // 요청받은 예매 id 리스트를 돌면서, 예매 취소(상태 변경, 좌석 선점 취소), 티켓 취소, 결제 환불 api 호출
+
+  // 외부 결제 api 호출 분리 메서드
+  public void cancelReservations(List<UUID> reservationIds) {
+    List<String> idsForRefund;
+
+    idsForRefund = cancelReservationsInternal(reservationIds);
+
+    // 4) 결제 환불 api 호출
+    try {
+      paymentService.refund("CUSTOMER_CANCEL", idsForRefund);
+    } catch (Exception e) {
+      // 예매는 이미 취소됨
+      log.error("[PAYMENT-REFUND-FAIL] reservationIds={}", idsForRefund, e);
+    }
+  }
+
+  @Transactional
+  public List<String> cancelReservationsInternal(List<UUID> reservationIds) {
+
+    // 1) 예매 조회
+    List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
+
+    if (reservations.size() != reservationIds.size()) {
+      throw new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND);
+    }
+
+    // 2) 예매 상태 변경 및 좌석 선점 취소, 티켓 취소
+    reservations.forEach(
+        reservation -> {
+
+          // CONFIRMED -> CANCEL로 변경
+          reservation.cancelWithRefund();
+
+          // 좌석 선점 취소
+          seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+
+          // 예매 id에 해당하는 티켓 취소
+          ticketService.cancel(reservation.getId().toUuid());
+        });
+
+    // 3) 결제 환불 요청용 id 변환(string 변환)
+    return reservations.stream().map(r -> r.getId().toString()).toList();
   }
 }

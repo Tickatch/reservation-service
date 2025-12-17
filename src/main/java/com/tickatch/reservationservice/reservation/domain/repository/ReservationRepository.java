@@ -2,9 +2,12 @@ package com.tickatch.reservationservice.reservation.domain.repository;
 
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 public interface ReservationRepository extends JpaRepository<Reservation, ReservationId> {
@@ -25,4 +28,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Reserv
               and r.expireAt <= :now
           """)
   List<Reservation> findAllExpiredTargets(LocalDateTime now);
+
+  // 예매 id 조회
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select r from Reservation r where r.id in :ids")
+  List<Reservation> findAllById(List<UUID> ids);
 }

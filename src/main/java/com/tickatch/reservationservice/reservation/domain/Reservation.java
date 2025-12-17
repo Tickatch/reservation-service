@@ -168,6 +168,12 @@ public class Reservation extends AbstractAuditEntity {
     return this.status == ReservationStatus.CONFIRMED;
   }
 
+  // 7. 환불이 필요한 예매 취소
+  public void cancelWithRefund() {
+    validateCancelableAfterPayment();
+    this.status = ReservationStatus.CANCELED;
+  }
+
   // =======================================
 
   // 검증
@@ -199,6 +205,14 @@ public class Reservation extends AbstractAuditEntity {
         || this.status == ReservationStatus.CANCELED
         || this.status == ReservationStatus.EXPIRED) {
       throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_EXPIRE);
+    }
+  }
+
+  // 5. 환불이 필요한 예매 취소 가능한지 확인
+  // 예매 확정 이후에만 환불을 동반한 예매 취소 가능
+  private void validateCancelableAfterPayment() {
+    if (this.status != ReservationStatus.CONFIRMED) {
+      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_REFUND_CANCEL);
     }
   }
 }
