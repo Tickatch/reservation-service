@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 public interface TicketFeignClient {
 
   // 티켓 취소
-  @PostMapping("/api/v1/tickets/{reservationId}/cancel")
+  @PostMapping("/api/v1/tickets/reservations/{reservationId}/cancel")
   ApiResponse<Void> cancelTicketByReservation(@PathVariable UUID reservationId);
 }

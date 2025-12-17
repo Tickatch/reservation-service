@@ -78,7 +78,7 @@ public class Reservation extends AbstractAuditEntity {
     this.reservationNumber =
         StringUtils.hasText(reservationNumber) ? reservationNumber : generateReservationNumber();
     this.status = ReservationStatus.INIT;
-    this.expireAt = getCreatedAt().plusMinutes(10);
+    this.expireAt = LocalDateTime.now().plusMinutes(10);
   }
 
   // 팩토리 메서드
