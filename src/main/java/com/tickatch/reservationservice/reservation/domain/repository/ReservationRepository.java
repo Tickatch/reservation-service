@@ -21,8 +21,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Reserv
   @Query(
       """
               select r from Reservation r
-              where r.status in ('INIT', 'PENDING_PAYMENT')
+              where r.status in ('INIT', 'PAYMENT_FAILED')
               and r.expireAt <= :now
           """)
   List<Reservation> findAllExpiredTargets(LocalDateTime now);
+
+  // 예매 id 조회
+  //  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  //  @Query("select r from Reservation r where r.id in :ids")
+  //  List<Reservation> findAllByUuidIds(@Param("ids") List<UUID> ids);
+
+  List<Reservation> findAllByIdIn(List<ReservationId> ids);
 }
