@@ -1,8 +1,8 @@
 package com.tickatch.reservationservice.reservation.application.service;
 
-import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
-import com.tickatch.reservationservice.reservation.application.dto.ReservationRequest;
-import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
+import com.tickatch.reservationservice.reservation.application.dto.request.ReservationRequest;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationDetailResponse;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationResponse;
 import com.tickatch.reservationservice.reservation.application.event.ReservationCanceledEvent;
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
@@ -41,11 +41,11 @@ public class ReservationService {
     long seatId = req.seatId();
 
     // 1) 좌석 선점
-    try {
-      seatPreemptService.preempt(seatId);
-    } catch (Exception e) {
-      throw new ReservationException(ReservationErrorCode.SEAT_PREEMPT_FAILED);
-    }
+//    try {
+//      seatPreemptService.preempt(seatId);
+//    } catch (Exception e) {
+//      throw new ReservationException(ReservationErrorCode.SEAT_PREEMPT_FAILED);
+//    }
 
     // 2) 예매 엔티티 생성
     Reservation reservation;
@@ -62,15 +62,31 @@ public class ReservationService {
 
     } catch (Exception e) {
       // 좌석 선점 취소
-      seatPreemptService.cancel(seatId);
+//      seatPreemptService.cancel(seatId);
       throw new ReservationException(ReservationErrorCode.RESERVATION_SAVE_FAILED);
     }
 
     // 결제 시작으로 상태 변경
-    reservation.startPayment();
+//    reservation.startPayment();
     reservationRepository.save(reservation);
 
     return ReservationResponse.from(reservation);
+  }
+
+  // 결제 시작 시 예매 상태를 결제 진행중으로 변환
+  @Transactional
+  public void markPendingPayment(List<UUID> reservationIds) {
+
+    // 1) 예매 조회
+    List<ReservationId> ids = reservationIds.stream().map(ReservationId::of).toList();
+
+    List<Reservation> reservations = reservationRepository.findAllByIdIn(ids);
+
+    if (reservations.size() != reservationIds.size()) {
+      throw new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND);
+    }
+
+    reservations.forEach(Reservation::startPayment);
   }
 
   // 2. 예매 상세 조회
@@ -205,11 +221,11 @@ public class ReservationService {
       if (isSuccess) {
         // 예매 확정 상태로 변경 후 좌석 예매
         reservation.paymentConfirm();
-        seatPreemptService.reserve(reservation.getProductInfo().getSeatId());
+//        seatPreemptService.reserve(reservation.getProductInfo().getSeatId());
       } else {
         // 예매 실패 상태로 변경 후 선점 좌석 취소
         reservation.paymentFailed();
-        seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
+//        seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
       }
     }
   }

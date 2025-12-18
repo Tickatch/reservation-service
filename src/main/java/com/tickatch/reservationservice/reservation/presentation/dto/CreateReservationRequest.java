@@ -1,6 +1,6 @@
 package com.tickatch.reservationservice.reservation.presentation.dto;
 
-import com.tickatch.reservationservice.reservation.application.dto.ReservationRequest;
+import com.tickatch.reservationservice.reservation.application.dto.request.ReservationRequest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
