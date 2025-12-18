@@ -4,6 +4,7 @@ import com.tickatch.reservationservice.reservation.application.dto.ReservationDe
 import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
 import com.tickatch.reservationservice.reservation.application.service.ReservationService;
 import com.tickatch.reservationservice.reservation.presentation.dto.CreateReservationRequest;
+import com.tickatch.reservationservice.reservation.presentation.dto.PaymentResultRequest;
 import io.github.tickatch.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,5 +68,13 @@ public class ReservationApi {
   public ApiResponse<Boolean> isConfirmed(@PathVariable UUID id) {
     boolean confirmed = reservationService.isConfirmed(id);
     return ApiResponse.success(confirmed);
+  }
+
+  // 6. 결제 상태 수신
+  @PatchMapping("/payment-result")
+  @Operation(summary = "결제 상태 수신", description = "결제 상태를 수신하여 예매를 확정/취소합니다.")
+  public ApiResponse<Void> applyPaymentSResult(@RequestBody PaymentResultRequest request) {
+    reservationService.applyPaymentResult(request.status(), request.reservationIds());
+    return ApiResponse.success();
   }
 }
