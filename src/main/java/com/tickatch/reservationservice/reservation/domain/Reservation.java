@@ -18,8 +18,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Table(name = "p_reservation")
 @Entity
 @Getter
@@ -129,22 +131,14 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.PENDING_PAYMENT;
   }
 
-  // 2. 결제 성공
-  // 결제 진행 상태 이후에만 결제 성공으로 넘어갈 수 있다.
-  public void confirmSeats() {
-    validatePaymentPending();
-    this.status = ReservationStatus.CONFIRMED;
-  }
-
-  // 3. 결제 실패
+  // 2. 결제 실패
   // 결제 진행 상태 이후에만 결제 실패로 넘어갈 수 있다.
   public void paymentFailed() {
     validatePaymentPending();
     this.status = ReservationStatus.PAYMENT_FAILED;
-    // 좌석 원복 처리 필요
   }
 
-  // 4. 사용자 예매 취소
+  // 3. 사용자 예매 취소
   // 취소 또는 만료 상태가 아닐 때만 취소할 수 있다.
   // 예매 확정 시에는? -> 환불 생각
   public void cancel() {
@@ -152,14 +146,14 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.CANCELED;
   }
 
-  // 5. 예매 확정 상태로 변경
+  // 4. 결제 성공으로 예매 확정 상태로 변경
   // 결제 진행 상태 이후에만 예매 확정으로 넘어갈 수 있다.
-  public void confirm() {
+  public void paymentConfirm() {
     validatePaymentPending();
     this.status = ReservationStatus.CONFIRMED;
   }
 
-  // 6. 예매 시간 만료
+  // 5. 예매 시간 만료
   // 예매 확정, 취소, 만료 상태가 아닌 경우에만 만료로 넘어갈 수 있다.
   public void expire(LocalDateTime now) {
     validateCanExpired();
@@ -171,9 +165,18 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.EXPIRED;
   }
 
-  // 7. 현재 confirm 상태인지
+  // 6. 현재 confirm 상태인지
   public boolean isConfirmed() {
     return this.status == ReservationStatus.CONFIRMED;
+  }
+
+  // 7. 환불이 필요한 예매 취소
+  public void cancelWithRefund() {
+    validateCancelableAfterPayment();
+
+    log.info("before cancel status={}", this.status);
+    this.status = ReservationStatus.CANCELED;
+    log.info("after cancel status={}", this.status);
   }
 
   // =======================================
@@ -190,7 +193,7 @@ public class Reservation extends AbstractAuditEntity {
   // 2. 결제 진행 상태인지 확인
   private void validatePaymentPending() {
     if (this.status != ReservationStatus.PENDING_PAYMENT) {
-      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_PAYMENT);
+      throw new ReservationException(ReservationErrorCode.STATUS_IS_NOT_PAYMENT_PENDING);
     }
   }
 
@@ -207,6 +210,14 @@ public class Reservation extends AbstractAuditEntity {
         || this.status == ReservationStatus.CANCELED
         || this.status == ReservationStatus.EXPIRED) {
       throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_EXPIRE);
+    }
+  }
+
+  // 5. 환불이 필요한 예매 취소 가능한지 확인
+  // 예매 확정 이후에만 환불을 동반한 예매 취소 가능
+  private void validateCancelableAfterPayment() {
+    if (this.status != ReservationStatus.CONFIRMED) {
+      throw new ReservationException(ReservationErrorCode.INVALID_STATUS_FOR_REFUND_CANCEL);
     }
   }
 }

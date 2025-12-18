@@ -77,7 +77,7 @@ dependencies {
 
     implementation 'io.github.tickatch:common-lib:0.0.5'
     implementation 'io.prometheus:prometheus-metrics-exporter-pushgateway'
-    
+
     // lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
