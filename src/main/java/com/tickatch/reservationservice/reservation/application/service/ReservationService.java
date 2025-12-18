@@ -3,13 +3,13 @@ package com.tickatch.reservationservice.reservation.application.service;
 import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
 import com.tickatch.reservationservice.reservation.application.dto.ReservationRequest;
 import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
+import com.tickatch.reservationservice.reservation.application.event.ReservationCanceledEvent;
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationErrorCode;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationException;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
-import com.tickatch.reservationservice.reservation.domain.service.PaymentService;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
 import com.tickatch.reservationservice.reservation.domain.service.TicketService;
 import java.time.LocalDateTime;
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class ReservationService {
   private final ReservationDetailsRepository reservationDetailsRepository;
   private final SeatPreemptService seatPreemptService;
   private final TicketService ticketService;
-  private final PaymentService paymentService;
+  private final ApplicationEventPublisher eventPublisher;
 
   // 1. 예매 생성
   @Transactional
@@ -134,14 +135,20 @@ public class ReservationService {
     reservations.forEach(
         r -> {
 
-          // 예매 취소
-          r.cancel();
+          // 1) 예매 취소 CONFIRMED -> CANCEL로 변경
+          r.cancelWithRefund();
 
-          // 티켓 취소
+          // 2) 티켓 취소
           ticketService.cancel(r.getId().toUuid());
         });
 
     log.info("총 {}건의 예매 취소 완료. productId={}", cancelledCount, productId);
+
+    // 3) 결제 환불 요청용 id 변환(string 변환)
+    List<String> idsForRefund = reservations.stream().map(r -> r.getId().toString()).toList();
+
+    // 4) 결제 환불 이벤트 발행
+    eventPublisher.publishEvent(new ReservationCanceledEvent(idsForRefund, "PRODUCT_CANCEL"));
   }
 
   // 6. 예매 확정 여부
@@ -209,27 +216,13 @@ public class ReservationService {
 
   // 9. 예매 리스트 취소
   // 요청받은 예매 id 리스트를 돌면서, 예매 취소(상태 변경, 좌석 선점 취소), 티켓 취소, 결제 환불 api 호출
-
-  // 외부 결제 api 호출 분리 메서드
-  public void cancelReservations(List<UUID> reservationIds) {
-    List<String> idsForRefund;
-
-    idsForRefund = cancelReservationsInternal(reservationIds);
-
-    // 4) 결제 환불 api 호출
-    try {
-      paymentService.refund("CUSTOMER_CANCEL", idsForRefund);
-    } catch (Exception e) {
-      // 예매는 이미 취소됨
-      log.error("[PAYMENT-REFUND-FAIL] reservationIds={}", idsForRefund, e);
-    }
-  }
-
   @Transactional
-  public List<String> cancelReservationsInternal(List<UUID> reservationIds) {
+  public void cancelReservations(List<UUID> reservationIds) {
 
     // 1) 예매 조회
-    List<Reservation> reservations = reservationRepository.findAllById(reservationIds);
+    List<ReservationId> ids = reservationIds.stream().map(ReservationId::of).toList();
+
+    List<Reservation> reservations = reservationRepository.findAllByIdIn(ids);
 
     if (reservations.size() != reservationIds.size()) {
       throw new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND);
@@ -250,6 +243,9 @@ public class ReservationService {
         });
 
     // 3) 결제 환불 요청용 id 변환(string 변환)
-    return reservations.stream().map(r -> r.getId().toString()).toList();
+    List<String> idsForRefund = reservations.stream().map(r -> r.getId().toString()).toList();
+
+    // 4) 결제 환불 이벤트 발행
+    eventPublisher.publishEvent(new ReservationCanceledEvent(idsForRefund, "CUSTOMER_CANCEL"));
   }
 }
