@@ -26,7 +26,8 @@ public class ReservationExpireHelper {
 
     try {
       Reservation reservation =
-          reservationRepository.findById(reservationId)
+          reservationRepository
+              .findById(reservationId)
               .orElseThrow(
                   () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 

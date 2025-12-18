@@ -17,9 +17,7 @@ public class ReservationCancelHelper {
   private final SeatPreemptService seatPreemptService;
   private final TicketService ticketService;
 
-  /**
-   * 외부 리소스(좌석, 티켓) 취소를 안전하게 수행한다. - 각 호출은 독립 트랜잭션(REQUIRES_NEW) - 실패해도 예외를 밖으로 던지지 않는다
-   */
+  /** 외부 리소스(좌석, 티켓) 취소를 안전하게 수행한다. - 각 호출은 독립 트랜잭션(REQUIRES_NEW) - 실패해도 예외를 밖으로 던지지 않는다 */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void cancelExternalResources(Reservation reservation) {
 

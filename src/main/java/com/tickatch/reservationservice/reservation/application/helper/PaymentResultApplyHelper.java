@@ -23,8 +23,11 @@ public class PaymentResultApplyHelper {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void applySafely(ReservationId reservationId, boolean isSuccess) {
     try {
-      Reservation reservation = reservationRepository.findById(reservationId)
-          .orElseThrow(() -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+      Reservation reservation =
+          reservationRepository
+              .findById(reservationId)
+              .orElseThrow(
+                  () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
       if (isSuccess) {
         // 예매 확정 상태로 변경 후 좌석 예매
@@ -36,19 +39,10 @@ public class PaymentResultApplyHelper {
         seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
       }
 
-      log.info(
-          "결제 결과 반영 성공 reservationId={}, success={}",
-          reservationId,
-          isSuccess
-      );
+      log.info("결제 결과 반영 성공 reservationId={}, success={}", reservationId, isSuccess);
 
     } catch (Exception e) {
-      log.error(
-          "결제 결과 반영 실패 reservationId={}, success={}",
-          reservationId,
-          isSuccess,
-          e
-      );
+      log.error("결제 결과 반영 실패 reservationId={}, success={}", reservationId, isSuccess, e);
     }
   }
 }
