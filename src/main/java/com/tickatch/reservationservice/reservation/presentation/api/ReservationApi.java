@@ -1,7 +1,8 @@
 package com.tickatch.reservationservice.reservation.presentation.api;
 
-import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
-import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
+import com.tickatch.reservationservice.reservation.application.dto.request.PendingPaymentRequest;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationDetailResponse;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationResponse;
 import com.tickatch.reservationservice.reservation.application.service.ReservationService;
 import com.tickatch.reservationservice.reservation.presentation.dto.CreateReservationRequest;
 import com.tickatch.reservationservice.reservation.presentation.dto.PaymentResultRequest;
@@ -84,6 +85,14 @@ public class ReservationApi {
   @Operation(summary = "예매 리스트 취소", description = "취소할 예매 리스트를 받고 예매 취소 및 결제와 연동하여 환불 처리한다.")
   public ApiResponse<Void> cancel(@RequestBody ReservationCancelRequest request) {
     reservationService.cancelReservations(request.toCancelRequest().reservationIds());
+    return ApiResponse.success();
+  }
+
+  // 8. 예매 상태 변경용
+  @PatchMapping("/pending-payment")
+  @Operation(summary = "결제 진행중으로 상태 변경", description = "결제가 시작되면 예매 상태를 결제 진행중으로 변경합니다.")
+  public ApiResponse<Void> markPendingPayment(@RequestBody PendingPaymentRequest request) {
+    reservationService.markPendingPayment(request.toUUIDs());
     return ApiResponse.success();
   }
 }

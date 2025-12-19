@@ -1,6 +1,6 @@
 package com.tickatch.reservationservice.reservation.presentation.dto;
 
-import com.tickatch.reservationservice.reservation.application.dto.CancelRequest;
+import com.tickatch.reservationservice.reservation.application.dto.request.CancelRequest;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.UUID;

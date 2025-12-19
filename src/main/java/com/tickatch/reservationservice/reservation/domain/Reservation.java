@@ -138,9 +138,8 @@ public class Reservation extends AbstractAuditEntity {
     this.status = ReservationStatus.PAYMENT_FAILED;
   }
 
-  // 3. 사용자 예매 취소
+  // 3. 사용자 예매 취소(예매 확정 전)
   // 취소 또는 만료 상태가 아닐 때만 취소할 수 있다.
-  // 예매 확정 시에는? -> 환불 생각
   public void cancel() {
     validateCanceledOrExpired();
     this.status = ReservationStatus.CANCELED;
@@ -170,7 +169,7 @@ public class Reservation extends AbstractAuditEntity {
     return this.status == ReservationStatus.CONFIRMED;
   }
 
-  // 7. 환불이 필요한 예매 취소
+  // 7. 환불이 필요한 예매 취소(예매 확정 후 취소)
   public void cancelWithRefund() {
     validateCancelableAfterPayment();
 
