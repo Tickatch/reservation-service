@@ -49,11 +49,11 @@ public class ReservationService {
     long seatId = req.seatId();
 
     // 1) 좌석 선점
-    //    try {
-    //      seatPreemptService.preempt(seatId);
-    //    } catch (Exception e) {
-    //      throw new ReservationException(ReservationErrorCode.SEAT_PREEMPT_FAILED);
-    //    }
+    try {
+      seatPreemptService.preempt(seatId);
+    } catch (Exception e) {
+      throw new ReservationException(ReservationErrorCode.SEAT_PREEMPT_FAILED);
+    }
 
     // 2) 예매 엔티티 생성
     Reservation reservation;
@@ -70,12 +70,12 @@ public class ReservationService {
 
     } catch (Exception e) {
       // 좌석 선점 취소
-      //      seatPreemptService.cancel(seatId);
+      seatPreemptService.cancel(seatId);
       throw new ReservationException(ReservationErrorCode.RESERVATION_SAVE_FAILED);
     }
 
     // 결제 시작으로 상태 변경
-    //    reservation.startPayment();
+    reservation.startPayment();
     reservationRepository.save(reservation);
 
     return ReservationResponse.from(reservation);
