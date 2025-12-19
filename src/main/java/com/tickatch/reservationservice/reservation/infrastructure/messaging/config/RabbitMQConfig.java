@@ -43,12 +43,25 @@ public class RabbitMQConfig {
   /** Reservation용 라우팅 키 */
   public static final String ROUTING_KEY_CANCELLED_RESERVATION = "product.cancelled.reservation";
 
+  /** Log 서비스 Exchange (공통 로그용) */
+  public static final String LOG_EXCHANGE = "tickatch.log";
+
+  /** Reservation 로그 라우팅 키 */
+  public static final String ROUTING_KEY_RESERVATION_LOG = "reservation.log";
+
   // ========================================
   // Exchange (Consumer도 선언 필요 - 멱등성 보장)
   // ========================================
+  // 상품
   @Bean
   public TopicExchange productExchange() {
     return ExchangeBuilder.topicExchange(productExchange).durable(true).build();
+  }
+
+  // 로그
+  @Bean
+  public TopicExchange logExchange() {
+    return ExchangeBuilder.topicExchange(LOG_EXCHANGE).durable(true).build();
   }
 
   // ========================================
