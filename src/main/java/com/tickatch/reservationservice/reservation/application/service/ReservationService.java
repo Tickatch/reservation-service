@@ -1,5 +1,6 @@
 package com.tickatch.reservationservice.reservation.application.service;
 
+import com.tickatch.reservationservice.global.security.ActorExtractor;
 import com.tickatch.reservationservice.reservation.application.dto.request.ReservationRequest;
 import com.tickatch.reservationservice.reservation.application.dto.response.ReservationDetailResponse;
 import com.tickatch.reservationservice.reservation.application.dto.response.ReservationResponse;
@@ -8,6 +9,7 @@ import com.tickatch.reservationservice.reservation.application.helper.PaymentRes
 import com.tickatch.reservationservice.reservation.application.helper.ProductCancelHelper;
 import com.tickatch.reservationservice.reservation.application.helper.ReservationCancelHelper;
 import com.tickatch.reservationservice.reservation.application.helper.ReservationExpireHelper;
+import com.tickatch.reservationservice.reservation.application.port.ReservationLogPort;
 import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationErrorCode;
@@ -41,6 +43,7 @@ public class ReservationService {
   private final PaymentResultApplyHelper paymentResultApplyHelper;
   private final ReservationCancelHelper reservationCancelHelper;
   private final ProductCancelHelper productCancelHelper;
+  private final ReservationLogPort reservationLogPort;
 
   // 1. 예매 생성
   @Transactional
@@ -74,9 +77,22 @@ public class ReservationService {
       throw new ReservationException(ReservationErrorCode.RESERVATION_SAVE_FAILED);
     }
 
-    // 결제 시작으로 상태 변경
-    reservation.startPayment();
     reservationRepository.save(reservation);
+
+    // 예매 생성 로그 이벤트 발행
+    try {
+      ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+      reservationLogPort.publishAction(
+          reservation.getId().toUuid(),
+          reservation.getReservationNumber(),
+          "CREATED",
+          actor.actorType(),
+          actor.actorUserId(),
+          LocalDateTime.now());
+    } catch (Exception e) {
+      log.warn("예매 생성 로그 발행 실패. reservationId={}", reservation.getId(), e);
+    }
 
     return ReservationResponse.from(reservation);
   }
@@ -94,7 +110,25 @@ public class ReservationService {
       throw new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND);
     }
 
-    reservations.forEach(Reservation::startPayment);
+    reservations.forEach(
+        reservation -> {
+          reservation.startPayment();
+
+          // 결제 진행중(PENDING_PAYMENT) 로그 이벤트 발행
+          try {
+            ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+            reservationLogPort.publishAction(
+                reservation.getId().toUuid(),
+                reservation.getReservationNumber(),
+                "PENDING_PAYMENT",
+                actor.actorType(),
+                actor.actorUserId(),
+                LocalDateTime.now());
+          } catch (Exception e) {
+            log.warn("결제 진행중 로그 발행 실패. reservationId={}", reservation.getId(), e);
+          }
+        });
   }
 
   // 2. 예매 상세 조회
@@ -133,6 +167,21 @@ public class ReservationService {
     // 예매 상태를 CANCEL로 변경
     reservation.cancel();
 
+    // 예매 취소 로그 이벤트 발행
+    try {
+      ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+      reservationLogPort.publishAction(
+          reservation.getId().toUuid(),
+          reservation.getReservationNumber(),
+          "CANCELED_BY_USER",
+          actor.actorType(),
+          actor.actorUserId(),
+          LocalDateTime.now());
+    } catch (Exception e) {
+      log.warn("예매 취소 로그 발행 실패. reservationId={}", reservation.getId(), e);
+    }
+
     // 좌석 선점 취소
     seatPreemptService.cancel(reservation.getProductInfo().getSeatId());
 
@@ -161,6 +210,21 @@ public class ReservationService {
 
       // 티켓 취소
       productCancelHelper.cancelTicketSafely(reservation.getId().toUuid());
+
+      // 상품 취소로 인한 예매 취소 로그 이벤트 발행
+      try {
+        ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+        reservationLogPort.publishAction(
+            reservation.getId().toUuid(),
+            reservation.getReservationNumber(),
+            "CANCELED_BY_PRODUCT",
+            actor.actorType(),
+            actor.actorUserId(),
+            LocalDateTime.now());
+      } catch (Exception e) {
+        log.warn("상품 취소 예매 로그 발행 실패. reservationId={}", reservation.getId(), e);
+      }
     }
 
     log.info("예매 취소 완료");
@@ -208,6 +272,20 @@ public class ReservationService {
       // 결과 true/false
       if (result) {
         success++;
+        // 예매 만료 로그 이벤트 발행
+        try {
+          ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+          reservationLogPort.publishAction(
+              reservation.getId().toUuid(),
+              reservation.getReservationNumber(),
+              "EXPIRED",
+              actor.actorType(),
+              actor.actorUserId(),
+              now);
+        } catch (Exception e) {
+          log.warn("예매 만료 로그 발행 실패. reservationId={}", reservation.getId(), e);
+        }
       } else {
         fail++;
       }
@@ -224,7 +302,25 @@ public class ReservationService {
 
     // 예매 id로 찾아서 예매 상태 변경
     for (String id : reservationIds) {
-      paymentResultApplyHelper.applySafely(ReservationId.of(UUID.fromString(id)), isSuccess);
+      ReservationId reservationId = ReservationId.of(UUID.fromString(id));
+
+      // 예매 상태 변경
+      paymentResultApplyHelper.applySafely(reservationId, isSuccess);
+
+      // 결제 결과 로그 이벤트 발행
+      try {
+        ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+        reservationLogPort.publishAction(
+            reservationId.toUuid(),
+            null,
+            isSuccess ? "CONFIRMED" : "PAYMENT_FAILED",
+            actor.actorType(),
+            actor.actorUserId(),
+            LocalDateTime.now());
+      } catch (Exception e) {
+        log.warn("결제 결과 로그 발행 실패. reservationId={}, success={}", reservationId, isSuccess, e);
+      }
     }
   }
 
@@ -250,6 +346,21 @@ public class ReservationService {
 
       // 좌석 및 티켓 취소
       reservationCancelHelper.cancelExternalResources(reservation);
+
+      // 예매 리스트 취소 로그 이벤트 발행
+      try {
+        ActorExtractor.ActorInfo actor = ActorExtractor.extract();
+
+        reservationLogPort.publishAction(
+            reservation.getId().toUuid(),
+            reservation.getReservationNumber(),
+            "CANCELED_BY_USER",
+            actor.actorType(),
+            actor.actorUserId(),
+            LocalDateTime.now());
+      } catch (Exception e) {
+        log.warn("예매 리스트 취소 로그 발행 실패. reservationId={}", reservation.getId(), e);
+      }
     }
     log.info("예매 취소 처리 완료");
 
