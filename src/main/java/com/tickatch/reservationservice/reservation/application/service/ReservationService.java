@@ -319,11 +319,7 @@ public class ReservationService {
             actor.actorUserId(),
             LocalDateTime.now());
       } catch (Exception e) {
-        log.warn(
-            "결제 결과 로그 발행 실패. reservationId={}, success={}",
-            reservationId,
-            isSuccess,
-            e);
+        log.warn("결제 결과 로그 발행 실패. reservationId={}, success={}", reservationId, isSuccess, e);
       }
     }
   }
