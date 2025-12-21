@@ -1,5 +1,6 @@
 package com.tickatch.reservationservice.reservation.application.service;
 
+import com.tickatch.reservationservice.global.config.AuthExtractor.AuthInfo;
 import com.tickatch.reservationservice.global.security.ActorExtractor;
 import com.tickatch.reservationservice.reservation.application.dto.request.ReservationRequest;
 import com.tickatch.reservationservice.reservation.application.dto.response.ReservationDetailResponse;
@@ -14,7 +15,6 @@ import com.tickatch.reservationservice.reservation.domain.Reservation;
 import com.tickatch.reservationservice.reservation.domain.ReservationId;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationErrorCode;
 import com.tickatch.reservationservice.reservation.domain.exception.ReservationException;
-import com.tickatch.reservationservice.reservation.domain.repository.ReservationDetailsRepository;
 import com.tickatch.reservationservice.reservation.domain.repository.ReservationRepository;
 import com.tickatch.reservationservice.reservation.domain.service.SeatPreemptService;
 import com.tickatch.reservationservice.reservation.domain.service.TicketService;
@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReservationService {
 
   private final ReservationRepository reservationRepository;
-  private final ReservationDetailsRepository reservationDetailsRepository;
   private final SeatPreemptService seatPreemptService;
   private final TicketService ticketService;
   private final ApplicationEventPublisher eventPublisher;
@@ -133,7 +132,7 @@ public class ReservationService {
 
   // 2. 예매 상세 조회
   @Transactional(readOnly = true)
-  public ReservationDetailResponse getDetailReservation(UUID reservationId) {
+  public ReservationDetailResponse getDetailReservation(UUID reservationId, AuthInfo authInfo) {
 
     // 예매 id로 조회
     Reservation reservation =
@@ -142,27 +141,32 @@ public class ReservationService {
             .orElseThrow(
                 () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
+    validateReservationOwner(reservation, authInfo);
+
     return ReservationDetailResponse.from(reservation);
   }
 
   // 3. 예매 목록 조회
   @Transactional(readOnly = true)
-  public Page<ReservationResponse> getAllReservations(UUID reserverId, Pageable pageable) {
+  public Page<ReservationResponse> getAllReservations(
+      UUID reserverId, Pageable pageable, AuthInfo authInfo) {
 
-    return reservationDetailsRepository
-        .findAllByReserverId(reserverId, pageable)
+    return reservationRepository
+        .findAllByCreatedBy(authInfo.userId(), pageable)
         .map(ReservationResponse::from);
   }
 
   // 4. 예매 취소
   @Transactional
-  public void cancel(UUID reservationId) {
+  public void cancel(UUID reservationId, AuthInfo authInfo) {
 
     Reservation reservation =
         reservationRepository
             .findById(ReservationId.of(reservationId))
             .orElseThrow(
                 () -> new ReservationException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+    validateReservationOwner(reservation, authInfo);
 
     // 예매 상태를 CANCEL로 변경
     reservation.cancel();
@@ -327,7 +331,7 @@ public class ReservationService {
   // 9. 예매 리스트 취소
   // 요청받은 예매 id 리스트를 돌면서, 예매 취소(상태 변경, 좌석 선점 취소), 티켓 취소, 결제 환불 api 호출
   @Transactional
-  public void cancelReservations(List<UUID> reservationIds) {
+  public void cancelReservations(List<UUID> reservationIds, AuthInfo authInfo) {
 
     // 1) 예매 조회
     List<ReservationId> ids = reservationIds.stream().map(ReservationId::of).toList();
@@ -340,6 +344,8 @@ public class ReservationService {
 
     // 2) 예매 상태 변경 및 좌석 선점 취소, 티켓 취소
     for (Reservation reservation : reservations) {
+
+      validateReservationOwner(reservation, authInfo);
 
       // CANCEL 상태로 변경
       reservation.cancelWithRefund();
@@ -369,5 +375,18 @@ public class ReservationService {
 
     // 4) 결제 환불 이벤트 발행
     eventPublisher.publishEvent(new ReservationCanceledEvent(idsForRefund, "CUSTOMER_CANCEL"));
+  }
+
+  // =======================
+  // 매서드 추출
+
+  // 1. 예매 소유자 검증
+  private void validateReservationOwner(Reservation reservation, AuthInfo authInfo) {
+    if (authInfo.isAdmin()) {
+      return;
+    }
+    if (!reservation.getCreatedBy().equals(authInfo.userId())) {
+      throw new ReservationException(ReservationErrorCode.RESERVATION_OWNER_MISMATCH);
+    }
   }
 }
