@@ -49,6 +49,15 @@ public class RabbitMQConfig {
   /** Reservation 로그 라우팅 키 */
   public static final String ROUTING_KEY_RESERVATION_LOG = "reservation.log";
 
+  // ==================================================
+  // Ticket → Notification
+  // ==================================================
+  public static final String RESERVATION_EXCHANGE = "tickatch.reservation";
+  public static final String QUEUE_RESERVATION_COMPLETED_NOTIFICATION =
+      "tickatch.reservation.completed.notification.queue";
+  public static final String ROUTING_KEY_RESERVATION_COMPLETED_NOTIFICATION =
+      "reservation.completed.notification";
+
   // ========================================
   // Exchange (Consumer도 선언 필요 - 멱등성 보장)
   // ========================================
@@ -64,6 +73,12 @@ public class RabbitMQConfig {
     return ExchangeBuilder.topicExchange(LOG_EXCHANGE).durable(true).build();
   }
 
+  // 예매에서 알림
+  @Bean
+  public TopicExchange reservationExchange() {
+    return ExchangeBuilder.topicExchange(RESERVATION_EXCHANGE).durable(true).build();
+  }
+
   // ========================================
   // Queues
   // ========================================
@@ -72,6 +87,15 @@ public class RabbitMQConfig {
     return QueueBuilder.durable(QUEUE_PRODUCT_CANCELLED_RESERVATION)
         .withArgument("x-dead-letter-exchange", productExchange + ".dlx")
         .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_CANCELLED_RESERVATION)
+        .build();
+  }
+
+  @Bean
+  public Queue reservationCompletedNotificationQueue() {
+    return QueueBuilder.durable(QUEUE_RESERVATION_COMPLETED_NOTIFICATION)
+        .withArgument("x-dead-letter-exchange", RESERVATION_EXCHANGE + ".dlx")
+        .withArgument(
+            "x-dead-letter-routing-key", "dlq." + ROUTING_KEY_RESERVATION_COMPLETED_NOTIFICATION)
         .build();
   }
 
@@ -84,6 +108,14 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(productCancelledReservationQueue)
         .to(productExchange)
         .with(ROUTING_KEY_CANCELLED_RESERVATION);
+  }
+
+  @Bean
+  public Binding reservationCompletedNotificationBinding(
+      Queue reservationCompletedNotificationQueue, TopicExchange reservationExchange) {
+    return BindingBuilder.bind(reservationCompletedNotificationQueue)
+        .to(reservationExchange)
+        .with(ROUTING_KEY_RESERVATION_COMPLETED_NOTIFICATION);
   }
 
   // ========================================
@@ -105,6 +137,27 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(deadLetterReservationQueue)
         .to(deadLetterExchange)
         .with("dlq." + ROUTING_KEY_CANCELLED_RESERVATION);
+  }
+
+  // ========================================
+  // Dead Letter (Reservation)
+  // ========================================
+  @Bean
+  public TopicExchange reservationDeadLetterExchange() {
+    return ExchangeBuilder.topicExchange(RESERVATION_EXCHANGE + ".dlx").durable(true).build();
+  }
+
+  @Bean
+  public Queue reservationCompletedNotificationDlq() {
+    return QueueBuilder.durable(QUEUE_RESERVATION_COMPLETED_NOTIFICATION + ".dlq").build();
+  }
+
+  @Bean
+  public Binding reservationCompletedNotificationDlqBinding(
+      Queue reservationCompletedNotificationDlq, TopicExchange reservationDeadLetterExchange) {
+    return BindingBuilder.bind(reservationCompletedNotificationDlq)
+        .to(reservationDeadLetterExchange)
+        .with("dlq." + ROUTING_KEY_RESERVATION_COMPLETED_NOTIFICATION);
   }
 
   // ========================================
