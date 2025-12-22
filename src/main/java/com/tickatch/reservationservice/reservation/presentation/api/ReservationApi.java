@@ -1,7 +1,10 @@
 package com.tickatch.reservationservice.reservation.presentation.api;
 
-import com.tickatch.reservationservice.reservation.application.dto.ReservationDetailResponse;
-import com.tickatch.reservationservice.reservation.application.dto.ReservationResponse;
+import com.tickatch.reservationservice.global.config.AuthExtractor;
+import com.tickatch.reservationservice.global.config.AuthExtractor.AuthInfo;
+import com.tickatch.reservationservice.reservation.application.dto.request.PendingPaymentRequest;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationDetailResponse;
+import com.tickatch.reservationservice.reservation.application.dto.response.ReservationResponse;
 import com.tickatch.reservationservice.reservation.application.service.ReservationService;
 import com.tickatch.reservationservice.reservation.presentation.dto.CreateReservationRequest;
 import com.tickatch.reservationservice.reservation.presentation.dto.PaymentResultRequest;
@@ -41,7 +44,8 @@ public class ReservationApi {
   @GetMapping("/{id}")
   @Operation(summary = "예매 상세 조회", description = "하나의 예매의 상세 정보를 조회합니다.")
   public ApiResponse<ReservationDetailResponse> getDetailReservation(@PathVariable UUID id) {
-    ReservationDetailResponse response = reservationService.getDetailReservation(id);
+    AuthInfo authInfo = AuthExtractor.extract();
+    ReservationDetailResponse response = reservationService.getDetailReservation(id, authInfo);
     return ApiResponse.success(response);
   }
 
@@ -50,8 +54,10 @@ public class ReservationApi {
   @Operation(summary = "예매 목록 조회", description = "사용자가 예매한 목록 전체를 조회합니다.")
   public ApiResponse<Page<ReservationResponse>> getAllReservations(
       @PathVariable UUID reserverId, Pageable pageable) {
+    AuthInfo authInfo = AuthExtractor.extract();
+
     Page<ReservationResponse> response =
-        reservationService.getAllReservations(reserverId, pageable);
+        reservationService.getAllReservations(reserverId, pageable, authInfo);
     return ApiResponse.success(response);
   }
 
@@ -59,7 +65,9 @@ public class ReservationApi {
   @PostMapping("/{id}/cancel")
   @Operation(summary = "예매 취소", description = "예매를 취소합니다.")
   public ApiResponse<Void> cancel(@PathVariable UUID id) {
-    reservationService.cancel(id);
+    AuthInfo authInfo = AuthExtractor.extract();
+
+    reservationService.cancel(id, authInfo);
     return ApiResponse.success();
   }
 
@@ -83,7 +91,17 @@ public class ReservationApi {
   @PostMapping("/cancel")
   @Operation(summary = "예매 리스트 취소", description = "취소할 예매 리스트를 받고 예매 취소 및 결제와 연동하여 환불 처리한다.")
   public ApiResponse<Void> cancel(@RequestBody ReservationCancelRequest request) {
-    reservationService.cancelReservations(request.toCancelRequest().reservationIds());
+    AuthInfo authInfo = AuthExtractor.extract();
+
+    reservationService.cancelReservations(request.toCancelRequest().reservationIds(), authInfo);
+    return ApiResponse.success();
+  }
+
+  // 8. 예매 상태 변경용
+  @PatchMapping("/pending-payment")
+  @Operation(summary = "결제 진행중으로 상태 변경", description = "결제가 시작되면 예매 상태를 결제 진행중으로 변경합니다.")
+  public ApiResponse<Void> markPendingPayment(@RequestBody PendingPaymentRequest request) {
+    reservationService.markPendingPayment(request.toUUIDs());
     return ApiResponse.success();
   }
 }

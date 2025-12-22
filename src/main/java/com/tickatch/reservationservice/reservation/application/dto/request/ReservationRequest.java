@@ -1,4 +1,4 @@
-package com.tickatch.reservationservice.reservation.application.dto;
+package com.tickatch.reservationservice.reservation.application.dto.request;
 
 import java.util.UUID;
 
