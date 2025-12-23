@@ -24,7 +24,7 @@ Reservation Service는 예매 전 과정의 상태 흐름을 관리하며, 결�
 
 ## 아키텍처
 
----
+
 
 ### 시스템 구성
 
@@ -164,7 +164,6 @@ src/main/java/com/tickatch/reservationservice
 
 ## 도메인 모델
 
----
 
 ### Reservation (Aggregate Root)
 
@@ -216,7 +215,7 @@ Reservation
 
 ## 예매 상태(ReservationStatus)
 
----
+
 
 ### 상태 종류
 
@@ -257,7 +256,7 @@ Reservation
 
 ## 주요 기능
 
----
+
 
 ### 예매 관리
 
@@ -281,7 +280,7 @@ Reservation
 
 ## API 명세
 
----
+
 
 Base URL: `/api/v1/reservations`
 
@@ -336,7 +335,7 @@ Base URL: `/api/v1/reservations`
 
 ## 이벤트
 
---- 
+
 
 ### 발행 이벤트 (Producer)
 
@@ -352,7 +351,7 @@ Base URL: `/api/v1/reservations`
 
 ## 외부 연동
 
----
+
 
 ### Feign Client
 
@@ -366,7 +365,7 @@ Base URL: `/api/v1/reservations`
 
 ## 실행 방법
 
----
+
 
 ### 환경 변수
 
@@ -452,6 +451,6 @@ spring:
 | Payment Service         | 결제 관리    |
 | ReservationSeat Service | 예매 좌석 관리 |
 
----
+
 
 © 2025 Tickatch Team
